@@ -3,7 +3,10 @@
 
 namespace App\Controller;
 
+use App\Entity\Book;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
 class BookController extends AbstractController
@@ -21,10 +24,30 @@ class BookController extends AbstractController
 
     /**
      * @Route('/book/create', name='Создвть книгу')
+     * @param EntityManagerInterface $entityManager
+     * @return Response
      */
-    public function create()
+    public function create(EntityManagerInterface $entityManager)
     {
-        return 'test';
+        $book = new Book();
+        $book->setName('name');
+        $book->setYearEdition(1982);
+        $book->setIsbn(1234567890123);
+        $book->setPageCount(123);
+        $book->setCoverImg('link');
+
+        $entityManager->persist($book);
+        $entityManager->beginTransaction();
+        try {
+            $entityManager->flush();
+            $entityManager->commit();
+            $result = new Response('Добавлена новая книга '.$book->getName());
+        } catch (\Throwable $throwable) {
+            $entityManager->rollback();
+            $result = new Response('Добавить книгу не удалось');
+        }
+
+        return $result;
     }
 
     /**
@@ -36,6 +59,8 @@ class BookController extends AbstractController
      */
     public function view($id)
     {
+        $book = Book::class;
+
         return $this->render('book/view.html.twig', [
             'controller_name' => 'BookController',
         ]);
